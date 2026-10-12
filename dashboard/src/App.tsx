@@ -27,7 +27,30 @@ const AGENTS = [
 function SecurityApproval({ violation, now, onDecide }: { violation: SecurityViolation; now: number; onDecide: (id: string, action: 'ALLOW' | 'BLOCK') => void }) {
   const { title, body } = describe(violation.toolCall);
   const left = Math.max(0, Math.ceil((violation.createdAt + violation.ttlMs - now) / 1000));
-  return <article className="ops-approval-card"><div className="ops-approval-head"><span className="ops-pill">{violation.category} · {violation.signal ?? 'POLICY REVIEW'}</span><time>{left}s left</time></div><h3>{title}</h3>{body && <pre>{body}</pre>}<p>{violation.reason}</p><div className="ops-approval-actions"><button className="ops-approve" onClick={() => onDecide(violation.id, 'ALLOW')}>Allow action</button><button className="ops-reject" onClick={() => onDecide(violation.id, 'BLOCK')}>Block action</button></div></article>;
+  const rawEmployee = (violation.toolCall.input?.['employee'] ?? violation.toolCall.input?.['requestedBy'] ?? violation.toolCall.input?.['user'] ?? violation.toolCall.sessionId) as string | undefined;
+  const employeeName = rawEmployee && rawEmployee.startsWith('emp-') ? rawEmployee.slice(4) : (rawEmployee ?? 'Maya Iyer (NW-104)');
+
+  return (
+    <article className="ops-approval-card">
+      <div className="ops-approval-head">
+        <span className="ops-pill">{violation.category} · {violation.signal ?? 'POLICY REVIEW'}</span>
+        <time>{left}s left</time>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0 8px 0', fontSize: '12px', color: '#94a3b8' }}>
+        <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', fontWeight: 600 }}>
+          👤 Employee: {employeeName}
+        </span>
+        <span>· IT Operations Agent</span>
+      </div>
+      <h3>{title}</h3>
+      {body && <pre>{body}</pre>}
+      <p>{violation.reason}</p>
+      <div className="ops-approval-actions">
+        <button className="ops-approve" onClick={() => onDecide(violation.id, 'ALLOW')}>Allow action</button>
+        <button className="ops-reject" onClick={() => onDecide(violation.id, 'BLOCK')}>Block action</button>
+      </div>
+    </article>
+  );
 }
 
 function CompanyApproval({ request, employeeName, role, onDecide, busy, duplicateOf }: { request: CompanyDemoRecord['requests'][number]; employeeName: string; role: Role; onDecide: (id: string, approve: boolean) => void; busy: boolean; duplicateOf?: string }) {

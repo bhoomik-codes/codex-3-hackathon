@@ -296,26 +296,84 @@ export async function evaluateToolCall(toolArg: string, inputRaw: string): Promi
     inputPayload = { command: inputRaw };
   }
 
+  // Associate request with employee
+  const employeeName = 'Maya Iyer (NW-104)';
+  inputPayload.employee = inputPayload.employee ?? employeeName;
+  inputPayload.requestedBy = inputPayload.requestedBy ?? `${employeeName} · Engineering`;
+
   header(`Interactive Policy Evaluator: ${tool}`);
   output.write(`  Evaluating payload: ${c.cyan}${JSON.stringify(inputPayload)}${c.reset}...\n\n`);
 
   const start = performance.now();
-  const res = await api<{ action: Action; ruleId?: string; reason: string; band?: string; sessionId?: string }>('/intercept', {
+  // Fast dry-run check with approvalMode: 'ask' to determine policy classification
+  const dryRun = await api<{ action: Action; ruleId?: string; reason: string; band?: string; sessionId?: string }>('/intercept', {
     method: 'POST',
     body: JSON.stringify({
       tool,
       input: inputPayload,
-      sessionId: `eval-${Date.now().toString(36)}`,
+      sessionId: 'emp-maya.iyer',
       approvalMode: 'ask',
     }),
   });
   const latency = (performance.now() - start).toFixed(2);
 
-  tableRow('Gate Decision', `${badge(res.action)}  ${c.dim}(latency: ${latency}ms)${c.reset}`);
-  tableRow('Risk Band', riskBadge(res.band));
-  tableRow('Rule ID', `${c.bold}${res.ruleId ?? (res.action === 'ALLOW' ? 'default-allow' : 'threat-policy-block')}${c.reset}`);
-  tableRow('Reason', res.reason);
-  output.write('\n');
+  if (dryRun.action === 'ALLOW' || dryRun.action === 'BLOCK') {
+    tableRow('Gate Decision', `${badge(dryRun.action)}  ${c.dim}(latency: ${latency}ms)${c.reset}`);
+    tableRow('Risk Band', riskBadge(dryRun.band));
+    tableRow('Rule ID', `${c.bold}${dryRun.ruleId ?? (dryRun.action === 'ALLOW' ? 'default-allow' : 'threat-policy-block')}${c.reset}`);
+    tableRow('Employee', `${c.cyan}${employeeName}${c.reset}`);
+    tableRow('Reason', dryRun.reason);
+    output.write('\n');
+    return;
+  }
+
+  // HITL / Human review required: submit live hold to the dashboard
+  tableRow('Gate Decision', `${badge('HITL')}  ${c.dim}(Held for human sign-off)${c.reset}`);
+  tableRow('Risk Band', riskBadge(dryRun.band));
+  tableRow('Rule ID', `${c.bold}${dryRun.ruleId ?? 'threat-policy-block'}${c.reset}`);
+  tableRow('Employee', `${c.cyan}${employeeName}${c.reset}`);
+  tableRow('Reason', dryRun.reason);
+
+  output.write(`\n  ${c.green}${c.bold}✓ Sent approval request to GuardSaaB dashboard!${c.reset}\n`);
+  output.write(`  ${c.dim}→ Review live on dashboard:${c.reset} ${c.cyan}http://127.0.0.1:5174/${c.reset} ${c.dim}(Approvals tab)${c.reset}\n`);
+  output.write(`  ${c.yellow}Waiting for operator to Approve or Reject on dashboard...${c.reset} ${c.dim}(Press Ctrl+C to cancel)${c.reset}\n\n`);
+
+  const controller = new AbortController();
+  const onSigInt = () => {
+    controller.abort();
+    output.write(`\n  ${c.dim}Evaluation hold cancelled.${c.reset}\n\n`);
+    process.exit(0);
+  };
+  process.once('SIGINT', onSigInt);
+
+  try {
+    const res = await fetch(endpoint('/intercept'), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        tool,
+        input: inputPayload,
+        sessionId: 'emp-maya.iyer',
+        approvalMode: 'dashboard',
+      }),
+    });
+    const result = (await res.json()) as { action: Action; reason?: string };
+    if (result.action === 'ALLOW') {
+      output.write(`  ${c.green}${c.bold}✓ APPROVED by operator on dashboard! [ALLOW]${c.reset}\n`);
+      if (result.reason) output.write(`  ${c.dim}${result.reason}${c.reset}\n`);
+    } else {
+      output.write(`  ${c.red}${c.bold}⛔ REJECTED by operator on dashboard! [BLOCK]${c.reset}\n`);
+      if (result.reason) output.write(`  ${c.dim}${result.reason}${c.reset}\n`);
+    }
+  } catch (err) {
+    if ((err as Error).name !== 'AbortError') {
+      output.write(`  ${c.red}Hold error: ${(err as Error).message}${c.reset}\n`);
+    }
+  } finally {
+    process.off('SIGINT', onSigInt);
+    output.write('\n');
+  }
 }
 
 export async function pending(): Promise<void> {

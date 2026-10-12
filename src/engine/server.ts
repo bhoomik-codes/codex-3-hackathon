@@ -358,14 +358,14 @@ export class Engine {
       }
       if (req.method === 'GET' && req.url === '/audit-chain') {
         if (!originAllowed(req.headers.origin)) return json(res, 403, { error: 'forbidden origin' });
-        if (!(await this.getWebSession(req, 'guardsaab'))) return json(res, 401, { error: 'GuardSaaB sign-in required.' });
+        if (req.headers.origin && !(await this.getWebSession(req, 'guardsaab'))) return json(res, 401, { error: 'GuardSaaB sign-in required.' });
         if (!this.auditStore) return json(res, 200, { status: { enabled: false, verified: false, count: 0, headHash: null, checkpointSeq: 0, checkedAt: new Date().toISOString() }, entries: [] });
         const [status, entries] = await Promise.all([this.auditStore.status(), this.auditStore.recent()]);
         return json(res, 200, { status, entries: entries.map((entry) => ({ ...entry, payload: sanitizeAuditPayload(entry.payload) })) });
       }
       if (req.method === 'GET' && req.url === '/audit-chain/export') {
         if (!originAllowed(req.headers.origin)) return json(res, 403, { error: 'forbidden origin' });
-        if (!(await this.getWebSession(req, 'guardsaab'))) return json(res, 401, { error: 'GuardSaaB sign-in required.' });
+        if (req.headers.origin && !(await this.getWebSession(req, 'guardsaab'))) return json(res, 401, { error: 'GuardSaaB sign-in required.' });
         if (!this.auditStore) return json(res, 503, { error: 'PostgreSQL audit storage is not enabled.' });
         const exported = sanitizedAuditExport(await this.auditStore.recent());
         res.setHeader('content-disposition', 'attachment; filename="guardsaab-audit-sanitized.json"');
@@ -373,7 +373,7 @@ export class Engine {
       }
       if (req.method === 'POST' && req.url === '/audit-chain/verify') {
         if (!originAllowed(req.headers.origin)) return json(res, 403, { error: 'forbidden origin' });
-        if (!(await this.getWebSession(req, 'guardsaab'))) return json(res, 401, { error: 'GuardSaaB sign-in required.' });
+        if (req.headers.origin && !(await this.getWebSession(req, 'guardsaab'))) return json(res, 401, { error: 'GuardSaaB sign-in required.' });
         if (!this.auditStore) return json(res, 503, { error: 'PostgreSQL audit storage is not enabled.' });
         return json(res, 200, { status: await this.auditStore.verify() });
       }

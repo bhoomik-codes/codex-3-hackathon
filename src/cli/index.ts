@@ -177,6 +177,22 @@ async function main(): Promise<void> {
     const { runConsole } = await import('./console.js');
     return runConsole(process.argv.slice(3));
   }
+  if (cmd === 'showcase' || cmd === 'benchmark' || cmd === 'demo') {
+    const { showcase } = await import('./console.js');
+    return showcase();
+  }
+  if (cmd === 'eval' || cmd === 'test-call') {
+    const { evaluateToolCall } = await import('./console.js');
+    return evaluateToolCall(process.argv[3] ?? 'Bash', process.argv.slice(4).join(' '));
+  }
+  if (cmd === 'monitor' || cmd === 'watch') {
+    const { monitor } = await import('./console.js');
+    return monitor();
+  }
+  if (cmd === 'audit') {
+    const { verifyAudit } = await import('./console.js');
+    return verifyAudit();
+  }
   if (cmd === 'proxy') return runProxy();
   if (cmd === 'hook') {
     await import('../hook/index.js');
@@ -207,19 +223,20 @@ async function main(): Promise<void> {
   }
   process.stderr.write(
     'usage: guardsaab <command>\n\n' +
-      '  init [--agent claude|codex|cursor|cline] [--global] [--print]   wire the hooks into the agent\n' +
+      '  showcase                    run automated threat matrix defense benchmark (judge showcase)\n' +
+      '  eval <tool> <payload>       evaluate any arbitrary tool call or command live against policy\n' +
+      '  monitor                     stream real-time agent tool intercepts via WebSocket\n' +
+      '  audit                       verify cryptographic SHA-256 audit ledger integrity\n' +
+      '  console [command]           interactive terminal governance control center\n' +
       '  engine                      start the gateway (HTTP hold + WS) and serve the dashboard\n' +
-      '  console [command]           terminal governance console (status, scenarios, review queue, activity)\n' +
-      '  proxy                       start the network-layer egress proxy (HTTPS_PROXY target)\n' +
-      '  hook                        the Claude Code hook entry (spawned per tool call)\n' +
+      '  init [--agent <agent>]      wire the hooks into Claude Code / Codex / Cursor / Cline\n' +
       '  pending                     list calls held for review (with their ids)\n' +
       '  approve <id> | deny <id>    resolve a held call from the terminal\n' +
-      '  rules validate [--file <path>]  lint rule YAML files before engine load\n' +
-      '  scan [--file <tools.json>] [--pin] [--no-connect]  scan MCP tool defs (auto-discovers servers) for\n' +
-      '                              poisoning + rug-pull (tool-pinning)\n' +
-      '  proxy --mitm                egress proxy that also decrypts+scans HTTPS response bodies\n' +
-      '  deps [--dir <path>] [--osv]  offline supply-chain audit of lockfiles (malicious/vuln/url-deps/hash-pin)\n' +
-      '  feeds refresh | status      refresh the local IOC destination feed (guardsaab feeds refresh)\n',
+      '  proxy                       start the network-layer egress proxy (HTTPS_PROXY target)\n' +
+      '  rules validate [--file <p>] lint rule YAML files before engine load\n' +
+      '  scan [--file <tools.json>]  scan MCP tool defs for poisoning and rug-pulls\n' +
+      '  deps [--dir <path>] [--osv] offline supply-chain audit of lockfiles\n' +
+      '  feeds refresh | status      refresh the local IOC destination feed\n',
   );
   process.exit(1);
 }

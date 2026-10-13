@@ -65,22 +65,23 @@ fi
 
 # Step 2: PostgreSQL via Docker
 echo ""
-echo "[2/5] Starting PostgreSQL..."
-if ! command -v docker >/dev/null 2>&1; then
-  echo "[ERROR] Docker is required for the local database container."
-  exit 1
+# Step 2: PostgreSQL via Docker (with Standalone fallback)
+echo ""
+echo "[2/5] Checking PostgreSQL container..."
+USE_LOCAL_DB=1
+if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
+  echo "      [WARN] Docker is not running or not installed."
+  echo "             Proceeding in Standalone Mode (in-memory state & file ledger)."
+  USE_LOCAL_DB=0
+else
+  if docker compose up -d --wait postgres 2>/dev/null; then
+    echo "      ✓ PostgreSQL is ready on 127.0.0.1:54329."
+    USE_LOCAL_DB=1
+  else
+    echo "      [WARN] PostgreSQL failed to start. Falling back to Standalone Mode."
+    USE_LOCAL_DB=0
+  fi
 fi
-
-if ! docker info >/dev/null 2>&1; then
-  echo "[ERROR] Docker daemon is not running. Please start Docker and retry."
-  exit 1
-fi
-
-docker compose up -d --wait postgres || {
-  echo "[ERROR] PostgreSQL failed to become healthy. Check docker compose status."
-  exit 1
-}
-echo "      PostgreSQL is ready."
 
 # Process cleanup trap
 PIDS=()
@@ -93,18 +94,24 @@ cleanup() {
     fi
   done
   wait 2>/dev/null || true
-  echo "Services stopped cleanly. PostgreSQL container remains running."
+  echo "Services stopped cleanly."
 }
 trap cleanup EXIT INT TERM
 
 # Step 3: Start GuardSaaB Engine
 echo ""
 echo "[3/5] Starting GuardSaaB engine..."
-# Check if already running and healthy
+mkdir -p logs
+ENGINE_LOG="logs/engine.log"
+
 if curl -sf "$ENGINE_URL" 2>/dev/null | grep -q '"ready":true'; then
-  echo "      Existing engine is healthy; reusing it."
+  echo "      ✓ Existing engine is healthy on :9000; reusing it."
 else
-  npm run engine:local > /tmp/guardsaab-engine.log 2>&1 &
+  if [ "$USE_LOCAL_DB" -eq 1 ]; then
+    npm run engine:local >> "$ENGINE_LOG" 2>&1 &
+  else
+    npm run engine >> "$ENGINE_LOG" 2>&1 &
+  fi
   ENGINE_PID=$!
   PIDS+=("$ENGINE_PID")
 

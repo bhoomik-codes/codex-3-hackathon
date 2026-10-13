@@ -1,0 +1,13 @@
+node_modules
+*/node_modules
+dashboard/node_modules
+.git
+.cerberus
+logs
+*.log
+.idea
+.vscode
+dist
+dashboard/dist
+.DS_Store
+Thumbs.db

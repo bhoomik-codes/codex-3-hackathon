@@ -5,22 +5,25 @@ The terminal console is a keyboard-first command center for the GuardSaaB govern
 ## Quick Presentation Commands for Judges
 
 ```bash
-# 1. Automated threat matrix defense benchmark (Judge Showcase)
+# 1. Full-screen Interactive Agent Sandbox TUI (Judge Playground + Live GUI-Synced Audit Log)
+npm run tui
+
+# 2. Automated threat matrix defense benchmark (Judge Showcase)
 npm run showcase
 
-# 2. Live policy evaluation playground (test any command live)
+# 3. Live policy evaluation playground (test any command live)
 npm run eval -- Bash "cat .env"
 npm run eval -- Bash "rm -rf /production-code"
 npm run eval -- Bash "git push --force origin main"
 npm run eval -- Bash "git status"
 
-# 3. Cryptographic SHA-256 tamper-evident audit ledger verification
+# 4. Cryptographic SHA-256 tamper-evident audit ledger verification
 npm run audit
 
-# 4. Real-time WebSocket sentinel monitor (streams live agent intercepts)
+# 5. Real-time WebSocket sentinel monitor (streams live agent intercepts)
 npm run monitor
 
-# 5. Interactive terminal control center
+# 6. Interactive terminal control center
 npm run console
 ```
 

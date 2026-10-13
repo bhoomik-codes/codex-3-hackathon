@@ -37,9 +37,32 @@ GuardSaaB includes unified, automated demo launchers for **Windows**, **Linux**,
 
 ### Prerequisites
 
-* **Node.js**: v20 or newer with `npm`
-* **Docker Desktop / Docker Engine**: Running with Docker Compose support
+* **Option A (Docker)**: Docker Desktop / Docker Engine with Docker Compose (No Node.js needed!)
+* **Option B (Native)**: Node.js v20+ with `npm`
 * **(Optional) Ollama**: Running on `http://127.0.0.1:11434` for local LLM responses (an offline fallback is included if Ollama is not installed)
+
+---
+
+### Option 0: Pure Docker (Zero Node.js Required)
+
+Spin up the complete environment (PostgreSQL, Control Plane Engine, Governance Console, Company Portal) with one command:
+
+```bash
+docker compose up --build
+```
+* **GuardSaaB Console**: http://localhost:5174
+* **Company Portal**: http://localhost:5173
+* **Engine API**: http://localhost:9000/health
+
+---
+
+### Diagnostics: "Why is the project not running?"
+
+Run the pre-flight diagnostic checker to test ports, Node version, Docker, and credentials:
+
+```bash
+npm run doctor
+```
 
 ---
 

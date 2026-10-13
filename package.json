@@ -40,7 +40,11 @@
     "THIRD_PARTY_NOTICES.md"
   ],
   "scripts": {
+    "doctor": "tsx src/cli/index.ts doctor",
     "demo": "tsx scripts/start-demo.ts",
+    "docker:up": "docker compose up --build -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
     "tui": "tsx src/cli/index.ts tui",
     "showcase": "tsx src/cli/index.ts showcase",
     "console": "tsx src/cli/index.ts console",

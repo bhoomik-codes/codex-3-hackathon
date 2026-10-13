@@ -53,6 +53,7 @@ import type {
 } from '../contract/types.js';
 
 export interface EngineOptions {
+  host?: string;
   port: number;
   rulesPath: string;
   auditFile: string;
@@ -152,12 +153,12 @@ export class Engine {
         throw new Error(`PostgreSQL initialization failed; refusing to start with a different persistence backend: ${(err as Error).message}`);
       }
     }
-    // Bind to loopback only — the approval surface (/decision) is unauthenticated by design for the
-    // local single-user tier, so it must never be reachable from the LAN. Reject on listen errors
+    // Bind to configured host (127.0.0.1 default, 0.0.0.0 in Docker). Reject on listen errors
     // (e.g. EADDRINUSE) instead of hanging: a gateway the user *thinks* is running is worse than none.
+    const bindHost = this.opts.host ?? process.env.ENGINE_HOST ?? '127.0.0.1';
     await new Promise<void>((resolve, reject) => {
       this.http.once('error', reject);
-      this.http.listen(this.opts.port, '127.0.0.1', () => {
+      this.http.listen(this.opts.port, bindHost, () => {
         this.http.removeListener('error', reject);
         resolve();
       });

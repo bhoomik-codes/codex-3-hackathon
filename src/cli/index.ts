@@ -66,7 +66,8 @@ async function runEngine(): Promise<void> {
   } else if (databaseUrl) {
     throw new Error(`Local account credentials are required at ${accountsFile}.`);
   }
-  const engine = new Engine({ port, rulesPath, auditFile, ttlMs, behavioral, content, injection, weightsPath, staticDir, autoOpen, approvalSurface, databaseUrl, stateDir: stateDir(), authAccounts });
+  const host = strEnv('ENGINE_HOST', '127.0.0.1');
+  const engine = new Engine({ host, port, rulesPath, auditFile, ttlMs, behavioral, content, injection, weightsPath, staticDir, autoOpen, approvalSurface, databaseUrl, stateDir: stateDir(), authAccounts });
   await engine.listen();
   process.stderr.write(
     `GuardSaaB engine listening on :${port}\n` +
@@ -225,8 +226,13 @@ async function main(): Promise<void> {
     const { runFeeds } = await import('./feeds.js');
     return runFeeds(process.argv.slice(3), PROJECT_ROOT);
   }
+  if (cmd === 'doctor' || cmd === 'check') {
+    const { runDoctor } = await import('./doctor.js');
+    return runDoctor();
+  }
   process.stderr.write(
     'usage: guardsaab <command>\n\n' +
+      '  doctor                      run diagnostic pre-flight checks (ports, docker, credentials)\n' +
       '  tui                         full-screen judge sandbox TUI (agent input + live audit log)\n' +
       '  showcase                    run automated threat matrix defense benchmark (judge showcase)\n' +
       '  eval <tool> <payload>       evaluate any arbitrary tool call or command live against policy\n' +

@@ -1,0 +1,43 @@
+# GuardSaaB Engine & Control Plane Container
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Install dependencies needed for native modules / build
+RUN apk add --no-cache curl bash
+
+# Copy root package files
+COPY package*.json tsconfig.json ./
+
+# Install project dependencies
+RUN npm install
+
+# Copy source code, rules, and configuration
+COPY src ./src
+COPY rules ./rules
+COPY credentials.example.txt ./credentials.example.txt
+COPY credentials.txt* ./
+
+# Build TypeScript to dist
+RUN npm run build:engine
+
+# Default environment
+ENV NODE_ENV=production
+ENV ENGINE_HOST=0.0.0.0
+ENV ENGINE_PORT=9000
+ENV CB_STATE_DIR=/app/.cerberus
+
+# Create state directory
+RUN mkdir -p /app/.cerberus /app/logs
+
+# Copy entrypoint script
+COPY scripts/docker-engine-entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+EXPOSE 9000
+
+HEALTHCHECK --interval=3s --timeout=3s --start-period=5s --retries=20 \
+  CMD node -e "fetch('http://127.0.0.1:9000/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["node", "dist/cli/index.js", "engine"]

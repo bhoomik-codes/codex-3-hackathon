@@ -69,24 +69,31 @@ if not exist "dashboard\node_modules\vite\bin\vite.js" (
 )
 
 echo.
-echo [2/5] Starting PostgreSQL...
+echo.
+echo [2/5] Checking PostgreSQL database container...
+set "USE_LOCAL_DB=1"
 where docker >nul 2>nul
 if errorlevel 1 (
-  echo [ERROR] Docker Desktop is required for the persistent local database.
-  echo         Install and start Docker Desktop, then run this file again.
-  goto :fail
+  echo [WARN] Docker not installed or not in PATH.
+  echo        Proceeding in Standalone Mode (in-memory state ^& local file ledger).
+  set "USE_LOCAL_DB=0"
+) else (
+  docker info >nul 2>nul
+  if errorlevel 1 (
+    echo [WARN] Docker Desktop is not running.
+    echo        Proceeding in Standalone Mode (in-memory state ^& local file ledger).
+    set "USE_LOCAL_DB=0"
+  ) else (
+    docker compose up -d --wait postgres >nul 2>nul
+    if errorlevel 1 (
+      echo [WARN] PostgreSQL container failed to start. Falling back to Standalone Mode.
+      set "USE_LOCAL_DB=0"
+    ) else (
+      echo       PostgreSQL container is ready on 127.0.0.1:54329.
+      set "USE_LOCAL_DB=1"
+    )
+  )
 )
-docker info >nul 2>nul
-if errorlevel 1 (
-  echo [ERROR] Docker Desktop is not running. Start it and run this file again.
-  goto :fail
-)
-docker compose up -d --wait postgres
-if errorlevel 1 (
-  echo [ERROR] PostgreSQL did not become ready. Check Docker Desktop and port 54329.
-  goto :fail
-)
-echo       PostgreSQL is ready.
 
 echo.
 echo [3/5] Starting the GuardSaaB engine...
@@ -94,15 +101,19 @@ call :engine_ready
 if not errorlevel 1 (
   echo       Existing engine is healthy; reusing it.
 ) else (
-  start "GuardSaaB Engine - keep this window open" /D "%PROJECT%" cmd /k "npm run engine:local"
-  echo       Waiting for the engine health check...
-  powershell -NoProfile -ExecutionPolicy Bypass -Command "$end=(Get-Date).AddSeconds(60); do { try { $r=Invoke-RestMethod -Uri 'http://127.0.0.1:9000/health' -TimeoutSec 2; if ($r.ready -eq $true -and $r.auditStorage -eq 'connected') { exit 0 } } catch {}; Start-Sleep -Seconds 1 } while ((Get-Date) -lt $end); exit 1"
+  if "%USE_LOCAL_DB%"=="1" (
+    start "GuardSaaB Engine - keep this window open" /D "%PROJECT%" cmd /k "npm run engine:local"
+  ) else (
+    start "GuardSaaB Engine - keep this window open" /D "%PROJECT%" cmd /k "npm run engine"
+  )
+  echo       Waiting for the engine health check on :9000...
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "$end=(Get-Date).AddSeconds(60); do { try { $r=Invoke-RestMethod -Uri 'http://127.0.0.1:9000/health' -TimeoutSec 2; if ($r.ready -eq $true) { exit 0 } } catch {}; Start-Sleep -Seconds 1 } while ((Get-Date) -lt $end); exit 1"
   if errorlevel 1 (
     echo [ERROR] The engine did not become healthy on port 9000.
-    echo         Check the GuardSaaB Engine window for startup errors or a port conflict.
+    echo         Run 'npm run doctor' to diagnose port conflicts or startup issues.
     goto :fail
   )
-  echo       Engine is healthy and connected to PostgreSQL.
+  echo       Engine is healthy and operational.
 )
 
 echo.

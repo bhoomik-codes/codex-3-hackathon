@@ -19,5 +19,72 @@ services:
       timeout: 3s
       retries: 20
 
+  engine:
+    build:
+      context: .
+      dockerfile: Dockerfile.engine
+    container_name: guardsaab-engine
+    restart: unless-stopped
+    environment:
+      ENGINE_HOST: 0.0.0.0
+      ENGINE_PORT: 9000
+      GUARDSAAB_DATABASE_URL: postgres://guardsaab:guardsaab_demo_local_only@postgres:5432/guardsaab_demo
+      CB_STATE_DIR: /app/.cerberus
+      AUTO_OPEN: off
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./rules:/app/rules:ro
+      - ./credentials.txt:/app/credentials.txt:ro
+      - guardsaab-cerberus-state:/app/.cerberus
+      - guardsaab-logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:9000/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""]
+      interval: 3s
+      timeout: 3s
+      start_period: 5s
+      retries: 20
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: guardsaab-dashboard
+    restart: unless-stopped
+    environment:
+      VITE_HOST: 0.0.0.0
+      PORT: 5174
+      VITE_ENGINE_URL: http://engine:9000
+      VITE_WS_URL: ws://engine:9000/ws
+    command: ["npm", "--prefix", "dashboard", "run", "dev:guardsaab"]
+    ports:
+      - "5174:5174"
+    depends_on:
+      engine:
+        condition: service_healthy
+
+  company:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: guardsaab-company
+    restart: unless-stopped
+    environment:
+      VITE_HOST: 0.0.0.0
+      PORT: 5173
+      VITE_ENGINE_URL: http://engine:9000
+      VITE_WS_URL: ws://engine:9000/ws
+    command: ["npm", "--prefix", "dashboard", "run", "dev:company"]
+    ports:
+      - "5173:5173"
+    depends_on:
+      engine:
+        condition: service_healthy
+
 volumes:
   guardsaab-postgres-data:
+  guardsaab-cerberus-state:
+  guardsaab-logs:

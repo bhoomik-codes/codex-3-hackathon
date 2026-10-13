@@ -173,6 +173,10 @@ async function runPending(): Promise<void> {
 async function main(): Promise<void> {
   const cmd = process.argv[2];
   if (cmd === 'engine') return runEngine();
+  if (cmd === 'tui' || cmd === 'sandbox') {
+    const { runTUI } = await import('./tui.js');
+    return runTUI();
+  }
   if (cmd === 'console') {
     const { runConsole } = await import('./console.js');
     return runConsole(process.argv.slice(3));
@@ -223,6 +227,7 @@ async function main(): Promise<void> {
   }
   process.stderr.write(
     'usage: guardsaab <command>\n\n' +
+      '  tui                         full-screen judge sandbox TUI (agent input + live audit log)\n' +
       '  showcase                    run automated threat matrix defense benchmark (judge showcase)\n' +
       '  eval <tool> <payload>       evaluate any arbitrary tool call or command live against policy\n' +
       '  monitor                     stream real-time agent tool intercepts via WebSocket\n' +

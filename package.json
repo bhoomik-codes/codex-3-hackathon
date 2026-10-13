@@ -41,10 +41,12 @@
   ],
   "scripts": {
     "demo": "tsx scripts/start-demo.ts",
+    "tui": "tsx src/cli/index.ts tui",
     "showcase": "tsx src/cli/index.ts showcase",
     "console": "tsx src/cli/index.ts console",
     "monitor": "tsx src/cli/index.ts monitor",
     "eval": "tsx src/cli/index.ts eval",
+    "audit": "tsx src/cli/index.ts audit",
     "engine": "tsx src/cli/index.ts engine",
     "engine:local": "tsx src/cli/index.ts engine --local-db",
     "db:up": "docker compose up -d --wait postgres",

@@ -8,10 +8,13 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dashboard/src/ScenarioLab.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/dashboard/src/ScenarioLab.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/CLI_CONSOLE.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/CLI_CONSOLE.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/rules/default_policy.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/rules/default_policy.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/scripts/policy.test.ts" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/policy.test.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cli/console.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/cli/console.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cli/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/cli/index.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/engine/server.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/engine/server.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/policy/engine.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/policy/engine.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

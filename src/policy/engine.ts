@@ -14,6 +14,8 @@ import type { MCPToolCall, PolicyAction, PolicyDecision, ToolCategory } from '..
 
 export interface PolicyEngine {
   evaluate(call: MCPToolCall): PolicyDecision;
+  /** Safe policy metadata for operator interfaces; never exposes rule implementation details. */
+  listRules(): ReadonlyArray<{ id: string; description: string; action: PolicyAction }>;
 }
 
 interface Rule {
@@ -85,6 +87,10 @@ export class JsonLogicPolicyEngine implements PolicyEngine {
       if (strict.action === 'BLOCK') break; // BLOCK is maximal — no need to keep scanning
     }
     return strict;
+  }
+
+  listRules(): ReadonlyArray<{ id: string; description: string; action: PolicyAction }> {
+    return this.policy.rules.map(({ id, description, action }) => ({ id, description, action }));
   }
 
   /** Evaluate one command string (whole command or a single chained segment) against the rule set. */

@@ -200,6 +200,17 @@ export class Engine {
             : database === 'disabled' ? 'For durable shared state, start PostgreSQL and run npm run engine:local.' : null,
         });
       }
+      if (req.method === 'GET' && req.url === '/policies') {
+        if (req.headers.origin && !(await this.getWebSession(req, 'guardsaab'))) return json(res, 401, { error: 'GuardSaaB sign-in required.' });
+        const rules = this.policy.listRules();
+        return json(res, 200, { default: 'HITL', count: rules.length, rules });
+      }
+      if (req.method === 'GET' && req.url?.startsWith('/activity')) {
+        if (req.headers.origin && !(await this.getWebSession(req, 'guardsaab'))) return json(res, 401, { error: 'GuardSaaB sign-in required.' });
+        const limit = Math.min(500, Math.max(1, Number(new URL(req.url, 'http://127.0.0.1').searchParams.get('limit') ?? 100) || 100));
+        const entries = this.audit.read().slice(-limit).reverse().map((entry) => sanitizeAuditPayload(entry));
+        return json(res, 200, { entries });
+      }
       if (req.url?.startsWith('/auth/')) return await this.handleAuth(req, res);
       if (req.url?.startsWith('/company-demo-state') && (req.method === 'GET' || req.method === 'PUT' || req.method === 'POST')) {
         if (!originAllowed(req.headers.origin)) return json(res, 403, { error: 'forbidden origin' });
